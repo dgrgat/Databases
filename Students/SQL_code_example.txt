@@ -1,0 +1,89 @@
+CREATE TABLE student (
+	student_ID SERIAL PRIMARY KEY,
+	student_name VARCHAR (30) NOT NULL,
+	student_last_name VARCHAR(30) NOT NULL,
+	student_mail VARCHAR (40)
+);
+
+CREATE TABLE prof (
+	prof_ID SERIAL PRIMARY KEY,
+	prof_name VARCHAR (30) NOT NULL,
+	prof_last_name VARCHAR(30) NOT NULL,
+	prof_mail VARCHAR (40)
+);
+
+CREATE TABLE course (
+	course_ID SERIAL PRIMARY KEY,
+	course_name VARCHAR (30) NOT NULL,
+	course_prof INTEGER NOT NULL,
+	FOREIGN KEY (course_prof) REFERENCES prof (prof_ID)
+);
+
+CREATE TABLE grade (
+	student_ID INTEGER NOT NULL,
+	course_ID INTEGER NOT NULL,
+	grade INTEGER,
+	PRIMARY KEY (student_ID, course_ID),
+	FOREIGN KEY (student_ID) REFERENCES student (student_ID),
+	FOREIGN KEY (course_ID) REFERENCES course (course_ID)
+);
+
+INSERT INTO student (student_name, student_last_name, student_mail) values('John','Smith','jsmith@inventedcollege.com');
+DELETE FROM "public".course WHERE course_name='Data Modelling';
+ALTER TABLE course ALTER COLUMN course_name DROP NOT NULL;
+
+SELECT * FROM grade ORDER BY course_ID;
+
+CREATE OR REPLACE VIEW passed AS
+SELECT student_name, student_last_name, g.course_id, g.grade FROM student AS s
+INNER JOIN grade as g
+ON s.student_ID = g.student_ID
+WHERE grade > 55
+ORDER BY grade DESC;
+
+SELECT COUNT (*) FROM passed;
+
+SELECT course_name, prof_name, prof_last_name FROM course AS c
+LEFT JOIN prof AS p
+ON c.course_ID = p.prof_ID;
+
+SELECT * FROM course 
+WHERE course_name LIKE 'Data%'
+ORDER BY course_ID;
+
+SELECT course_ID, ROUND (AVG(grade),2) FROM grade
+GROUP BY course_ID
+ORDER BY course_ID;
+
+SELECT * FROM grade 
+WHERE grade < 
+(SELECT ROUND(AVG(grade),2) FROM grade)
+ORDER BY student_ID;
+
+SELECT prof_name, prof_last_name
+FROM prof 
+WHERE prof_id IN
+(SELECT course.course_prof
+FROM grade
+INNER JOIN course ON course.course_id = grade.course_id
+WHERE grade >90)
+ORDER BY prof_name;
+
+SELECT student_id, grade,
+CASE 
+	WHEN (grade<55) THEN 'Failed'
+	WHEN (grade BETWEEN 55 AND 70) THEN 'C'
+	WHEN (grade BETWEEN 70 AND 85) THEN 'B'
+	WHEN (grade BETWEEN 85 AND 100) THEN 'A'
+	ELSE 'No show'
+END
+From grade
+ORDER BY grade DESC;
+
+SELECT CONCAT(course_name,'@universitycourse.com') 
+AS course_mail FROM course;
+
+SELECT * FROM student;
+CREATE INDEX index_student
+ON student (student_id);
+
