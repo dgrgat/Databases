@@ -1,0 +1,61 @@
+SELECT * FROM employee ORDER BY dept_ID;
+
+INSERT INTO loca (location_id,location_name) values (1,'Italy');
+
+DELETE FROM "public".works_on WHERE hours <=1;
+
+SELECT LOWER(CONCAT(employee_name,employee_last_name,'@company.com')) 
+AS employee_mail FROM employee;
+
+SELECT dept_name, l.location_name FROM dept AS d
+RIGHT JOIN loca AS l
+ON d.location_ID = l.location_ID;
+
+SELECT project_ID, ROUND (AVG(hours),2) FROM works_on
+GROUP BY project_id
+ORDER BY project_id
+LIMIT 10;
+
+SELECT DISTINCT * FROM works_on 
+WHERE hours < 
+(SELECT ROUND(AVG(hours),2) FROM works_on)
+ORDER BY project_ID;
+
+SELECT COUNT (*) FROM emp_work;
+
+SELECT * FROM employee 
+WHERE employee_name LIKE 'M%'
+AND employee_last_name LIKE 'M%'
+ORDER BY employee_ID;
+
+SELECT project_id, hours,
+CASE 
+	WHEN (hours<100) THEN 'New project'
+	WHEN (hours BETWEEN 100 AND 200) THEN 'Short term project'
+	WHEN (hours BETWEEN 200 AND 300) THEN 'Long term project'
+	WHEN (hours>300) THEN 'Ongoing project'
+	ELSE 'Planning new project'
+END
+From works_on
+ORDER BY hours DESC;
+
+SELECT employee_name, employee_last_name
+FROM employee 
+WHERE employee_id IN
+(SELECT works_on.employee_id
+FROM works_on
+INNER JOIN project ON project.project_id = works_on.project_id
+WHERE project.project_id =11)
+ORDER BY employee_name;
+
+CREATE OR REPLACE VIEW emp_work AS
+SELECT employee_name, employee_last_name, w.project_id, w.hours FROM employee AS e
+RIGHT JOIN works_on as w
+ON e.employee_ID = w.employee_ID
+WHERE hours > 8
+ORDER BY project_id;
+
+SELECT * FROM project;
+
+CREATE INDEX index_employees
+ON employee (employee_id);
