@@ -1,0 +1,157 @@
+CREATE TABLE Projects(
+	Project_ID SERIAL PRIMARY KEY,
+	Project_Name VARCHAR(100),
+	Project_value DECIMAL(5,2),
+	StartDate DATE,
+	EndDate DATE
+);
+
+CREATE TABLE Employees(
+	Employee_ID SERIAL PRIMARY KEY,
+	FirstName VARCHAR(50),
+	LastName VARCHAR(50),
+	HourlyWage DECIMAL(5,2),
+	HireDate DATE
+);
+
+CREATE TABLE ProjectEmployees(
+	Proj_Emp_ID SERIAL PRIMARY KEY,
+	ProjectID INT,
+	EmployeeID INT,
+	Hours DECIMAL(5,2),
+	CONSTRAINT FK_ProjectEmployees_Projects FOREIGN KEY (ProjectID) REFERENCES  Projects (Project_ID),
+	CONSTRAINT FK_ProjectEmployees_Employees FOREIGN KEY (EmployeeID) REFERENCES  Employees (Employee_ID)
+);
+
+CREATE TABLE JobOrders(
+	Job_Order_ID SERIAL PRIMARY KEY,
+	EmployeeID INT,
+	ProjectID INT,
+	Description TEXT,
+	OrderDate DATE,
+	Quantity INT,
+	Price DECIMAL(5,2),
+	CONSTRAINT FK_JobOrders_Projects FOREIGN KEY (ProjectID) REFERENCES  Projects (Project_ID),
+	CONSTRAINT FK_JobOrders_Employees FOREIGN KEY (EmployeeID) REFERENCES  Employees (Employee_ID)
+);
+
+ CREATE TABLE ContactPersons(
+	ConPers_ID SERIAL PRIMARY KEY,
+	ContactPerson VARCHAR(100),
+	ContactPersonRole VARCHAR(20),
+	PhoneNumber VARCHAR(12)
+);
+
+CREATE TABLE ZipCodes(
+	Zip_ID SERIAL PRIMARY KEY,
+	Zip_code VARCHAR(5),
+	City VARCHAR(255)
+);
+
+CREATE TABLE Customers (
+	Customer_ID SERIAL PRIMARY KEY,
+    Customer_Name VARCHAR(100),
+    Industry VARCHAR(100),
+    ContactPersonID INT,
+    Address VARCHAR(255),
+    Zip VARCHAR(5),
+	CONSTRAINT FK_Customers_ContactPersons FOREIGN KEY (ContactPersonID)
+	REFERENCES ContactPersons(ConPers_ID),
+	CONSTRAINT FK_Customers_ZipCodes FOREIGN KEY (Zip)
+	REFERENCES ZipCodes(Zip_ID)
+  );
+
+  CREATE TABLE ProjectFeedback(
+	Feedback_ID SERIAL PRIMARY KEY,
+	ProjectID INT,
+	CustomerID INT,
+	Feedback VARCHAR(5),
+	CONSTRAINT FK_ProjectFeedbacks_Projects FOREIGN KEY (ProjectID) REFERENCES  Projects (Project_ID),
+	CONSTRAINT FK_ProjectFeedbacks_Customers FOREIGN KEY (CustomerID) REFERENCES  Customers (Customer_ID)
+);
+
+INSERT INTO ProjectFeedback (projectid, customerid, feedback) values (10, 525, 1);
+
+CREATE INDEX index_employees
+ON employees (employee_id);
+
+CREATE INDEX index_customers
+ON customers (customer_id);
+
+SELECT * FROM employees;
+
+SELECT project_name, f.feedback FROM projects AS p
+INNER JOIN projectfeedback AS f
+ON p.project_ID = f.projectID
+WHERE f.feedback >'1';
+
+SELECT projectid, feedback,
+CASE 
+	WHEN (feedback ='1') THEN 'Failed project'
+	WHEN (feedback ='2') THEN 'Project needs major improvement'
+	WHEN (feedback ='3') THEN 'Project needs improvement'
+	WHEN (feedback ='4') THEN 'Fairy good project'
+	WHEN (feedback ='5') THEN 'Excellent project'
+	ELSE 'No feedback'
+END
+From ProjectFeedback
+ORDER BY feedback;
+
+SELECT firstname, lastname,
+CASE 
+	WHEN (hourlywage<15) THEN 'Intern'
+	WHEN (hourlywage BETWEEN 15 AND 25) THEN 'Junior'
+	WHEN (hourlywage BETWEEN 25 AND 35) THEN 'Middle'
+	WHEN (hourlywage BETWEEN 35 AND 45) THEN 'Senior'
+	ELSE 'Manager'
+END
+From employees
+ORDER BY hourlywage DESC;
+
+SELECT LOWER(CONCAT (firstname, lastname,'@company.com')) 
+AS employee_mail FROM employees;
+
+CREATE OR REPLACE VIEW pro_emp AS
+SELECT firstname, lastname, p.projectid, p.hours FROM employees AS e
+RIGHT JOIN projectemployees as p
+ON e.employee_ID = p.employeeID
+WHERE hours > 8
+ORDER BY projectid, hours;
+
+SELECT * FROM pro_job;
+
+SELECT DISTINCT * FROM joborders 
+WHERE price < 
+(SELECT ROUND(AVG(price),2) FROM joborders)
+ORDER BY price;
+
+CREATE OR REPLACE VIEW pro_job AS
+SELECT project_name, Project_value, j.quantity, j.price FROM projects AS p
+RIGHT JOIN joborders as j
+ON p.project_ID = j.projectID
+WHERE quantity > 1
+ORDER BY project_value,quantity DESC;
+
+SELECT firstname, lastname
+FROM employees 
+WHERE employee_id IN
+(SELECT joborders.employeeid
+FROM joborders
+INNER JOIN projects ON projects.project_id = joborders.projectid
+WHERE projects.project_id =18)
+ORDER BY firstname;
+
+SELECT * FROM joborders
+ORDER BY quantity;
+
+DELETE FROM "public".joborders WHERE quantity <=2;
+
+SELECT projectID, ROUND (AVG(quantity),2) FROM joborders
+GROUP BY projectid
+ORDER BY projectid
+LIMIT 10;
+
+SELECT * FROM employees 
+WHERE firstname LIKE 'M%'
+AND lastname LIKE 'M%'
+ORDER BY employee_ID;
